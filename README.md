@@ -1,6 +1,6 @@
-# Android TV 集中管理系统
+# xnyTV — TV / Kiosk 小主机集中管理系统
 
-> 企业内网环境下的 Android TV / Windows 大屏终端统一管理系统，支持远程控制、实时监控、集中管理
+> 由 TV 端、Kiosk 小主机端和服务端组成的企业内网大屏集中管理系统，支持网页展示、远程控制、实时监控与统一配置。
 
 源码仓库：[GitHub](https://github.com/tiki-47/xnyTV)。项目使用 [MIT License](./LICENSE)。
 
@@ -8,7 +8,15 @@
 
 ## 📋 项目简介
 
-本系统用于在企业内网环境中，统一管理多台 Android TV 终端，实现网页看板、宣传页、生产看板等内容的集中展示与控制。
+本系统用于在企业内网环境中，统一管理 Android TV 和连接显示屏的 Windows 小主机，实现网页看板、宣传页、生产看板等内容的集中展示与控制。
+
+系统包含三个端，可根据显示设备选择 TV 端或 Kiosk 小主机端，并通过服务端统一管理：
+
+| 端 | 项目目录 | 运行环境 | 主要用途 |
+|----|----------|----------|----------|
+| TV 端 | `tvclient/` | Android TV、安卓电视盒子 | 通过 WebView 全屏展示网页，接收远程指令并上报心跳 |
+| Kiosk 小主机端 | `xnykiosk/` | 连接电视或显示器的 Windows 小主机 / PC | 通过 Electron 全屏展示网页，支持本地配置和服务端集中管理 |
+| 服务端 | `tvservice/` | JDK 17 + MySQL 8.0 | 提供 Web 管理后台、设备管理、状态监控和远程指令下发 |
 
 ## ✨ 核心功能
 
@@ -22,6 +30,15 @@
 - ✅ WebSocket 自动重连
 - ✅ 开机自启动
 - ✅ Kiosk 模式(限制用户退出)
+
+### Kiosk 小主机端功能
+- ✅ 全屏锁定展示指定网页，窗口置顶
+- ✅ 定时刷新网页与崩溃、无响应自动恢复
+- ✅ 开机自启动
+- ✅ 本地配置展示网址、缩放比例与服务端地址
+- ✅ WebSocket 连接、断线重连与心跳上报
+- ✅ 接收服务端指令，远程修改网址、刷新页面与更新配置
+- ✅ 可独立运行，也可接入服务端统一管理
 
 ### 服务端功能
 - ✅ 设备注册与管理
@@ -40,6 +57,13 @@
 - **语言**: Kotlin
 - **核心技术**: WebView + WebSocket + Handler
 - **最低版本**: Android 5.0 (API 21)
+
+### Kiosk 小主机端
+- **平台**: Windows 小主机 / PC，外接电视或显示器
+- **框架**: Electron
+- **语言**: JavaScript + HTML + CSS
+- **通信**: WebSocket
+- **打包**: electron-builder，支持 Windows 安装包和便携版
 
 ### 服务端
 - **框架**: Spring Boot 3.3.5
@@ -75,7 +99,7 @@ xnyTV/
 ├── database/                # 数据库脚本
 │   └── init.sql            # 初始化脚本(包含表结构+测试数据)
 │
-├── xnykiosk/                # Electron Windows 大屏客户端
+├── xnykiosk/                # Kiosk 小主机端（Electron / Windows）
 ├── deploy/                  # Windows 构建、部署与打包脚本
 ├── LICENSE                  # MIT 开源许可证
 ├── DESIGN.md               # 完整设计文档(必读)
@@ -94,6 +118,11 @@ xnyTV/
 #### TV 端环境
 - Android TV 设备(API 21+)
 - 网络连接(内网)
+
+#### Kiosk 小主机端环境
+- Windows 小主机或 PC，连接电视或显示器
+- 源码运行和打包需要 Node.js、npm
+- 接入集中管理时，需与服务端网络互通
 
 ### 2. 数据库初始化
 
@@ -161,7 +190,7 @@ cd tvclient
 4. 授予必要权限
 5. (可选)设置为系统启动器实现 Kiosk 模式
 
-### 5. Windows PC 客户端
+### 5. Kiosk 小主机端（Windows）
 
 安装 Node.js 和 npm 后，在 PowerShell 执行：
 
@@ -392,7 +421,7 @@ websocket:
 
 ## 👨‍💻 作者
 
-xnyTV 团队
+[2764134654@qq.com](mailto:2764134654@qq.com)
 
 ---
 
