@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>配置管理 - XNY Kiosk</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f0f2f5; padding: 16px; min-height: 100vh; }
+    .container { max-width: 640px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 24px; }
+    .header h1 { font-size: 22px; margin-bottom: 4px; }
+    .header p { opacity: 0.85; font-size: 13px; }
+    .content { padding: 20px 24px; }
+    .section { margin-bottom: 20px; border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; }
+    .section-title { background: #f7f8fa; padding: 10px 14px; font-size: 13px; font-weight: 600; color: #555; border-bottom: 1px solid #e8e8e8; }
+    .section-body { padding: 14px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { display: block; margin-bottom: 5px; color: #333; font-weight: 500; font-size: 13px; }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 9px 12px; border: 1px solid #d9d9d9; border-radius: 6px;
+      font-size: 14px; transition: border-color 0.2s; color: #333; background: #fff;
+    }
+    input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,0.15); }
+    .hint { font-size: 12px; color: #888; margin-top: 4px; line-height: 1.4; }
+    .checkbox-row { display: flex; align-items: center; padding: 8px 0; }
+    .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; margin-right: 10px; cursor: pointer; accent-color: #667eea; }
+    .checkbox-row label { margin: 0; cursor: pointer; font-size: 13px; color: #444; }
+    .preset-btns { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .preset-btn { padding: 4px 10px; border: 1px solid #667eea; background: white; color: #667eea; border-radius: 5px; cursor: pointer; font-size: 12px; }
+    .preset-btn:hover { background: #667eea; color: white; }
+    .info-box { background: #e8f4f8; border-left: 3px solid #3498db; padding: 10px 12px; border-radius: 4px; margin-bottom: 16px; font-size: 12px; color: #2c6e8a; line-height: 1.6; }
+    .button-group { display: flex; gap: 10px; margin-top: 20px; padding: 0 24px 20px; }
+    button.btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .config-path { font-size: 11px; color: #999; word-break: break-all; padding: 8px 10px; background: #fafafa; border-radius: 4px; margin-top: 10px; }
+    .save-status { font-size: 13px; text-align: center; padding: 8px; border-radius: 6px; margin: 10px 24px 0; display: none; }
+    .save-status.success { background: #f0fff4; color: #38a169; border: 1px solid #9ae6b4; }
+    .save-status.error { background: #fff5f5; color: #e53e3e; border: 1px solid #feb2b2; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚙️ XNY Kiosk 配置</h1>
+      <p>修改后立即生效。Ctrl+Shift+C 打开此窗口</p>
+    </div>
+
+    <div class="content">
+      <div class="info-box">
+        💡 <strong>说明：</strong>配置保存后立即应用到主窗口，无需重启。<br>
+        快捷键：Ctrl+Shift+C 打开配置 &nbsp;|&nbsp; Ctrl+Shift+Q 退出应用
+      </div>
+
+      <!-- 显示设置 -->
+      <div class="section">
+        <div class="section-title">📺 显示设置</div>
+        <div class="section-body">
+          <div class="form-group">
+            <label for="url">展示网址（URL）</label>
+            <input type="text" id="url" placeholder="http://192.168.1.100/dashboard">
+            <div class="hint">大屏幕上全屏展示的网页地址</div>
+          </div>
+          <div class="form-group">
+            <label for="zoomFactor">页面缩放比例</label>
+            <input type="number" id="zoomFactor" min="0.5" max="3.0" step="0.05" value="1.0">
+            <div class="preset-btns">
+              <button type="button" class="preset-btn" onclick="setField('zoomFactor','0.75')">75%</button>
+              <button type="button" class="preset-btn" onclick="setField('zoomFactor','1.0')">100%</button>
+              <button type="button" class="preset-btn" onclick="setField('zoomFactor','1.25')">125%</button>
+              <button type="button" class="preset-btn" onclick="setField('zoomFactor','1.5')">150%</button>
+              <button type="button" class="preset-btn" onclick="setField('zoomFactor','2.0')">200%</button>
+            </div>
+          </div>
+          <div class="checkbox-row"><input type="checkbox" id="fullscreen"><label for="fullscreen">全屏/Kiosk 模式</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="alwaysOnTop"><label for="alwaysOnTop">窗口始终置顶</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="forceViewport"><label for="forceViewport">强制设置视口（解决页面显示不全）</label></div>
+        </div>
+      </div>
+
+      <!-- 自动刷新 -->
+      <div class="section">
+        <div class="section-title">⏱️ 自动刷新</div>
+        <div class="section-body">
+          <div class="checkbox-row"><input type="checkbox" id="enableAutoReload"><label for="enableAutoReload">启用定时自动刷新</label></div>
+          <div class="form-group" style="margin-top:10px">
+            <label for="reloadInterval">刷新间隔（毫秒）</label>
+            <input type="number" id="reloadInterval" min="60000" step="60000">
+            <div class="preset-btns">
+              <button type="button" class="preset-btn" onclick="setField('reloadInterval','300000')">5分钟</button>
+              <button type="button" class="preset-btn" onclick="setField('reloadInterval','900000')">15分钟</button>
+              <button type="button" class="preset-btn" onclick="setField('reloadInterval','1800000')">30分钟</button>
+              <button type="button" class="preset-btn" onclick="setField('reloadInterval','3600000')">1小时</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 服务器连接 -->
+      <div class="section">
+        <div class="section-title">🔗 服务器连接（可选）</div>
+        <div class="section-body">
+          <div class="form-group">
+            <label for="wsServerUrl">服务端 WebSocket 地址</label>
+            <input type="text" id="wsServerUrl" placeholder="ws://192.168.1.100:8080/ws">
+            <div class="hint">填写后可接受服务端远程指令（刷新/改URL/截图等）；留空则独立运行</div>
+          </div>
+          <div class="form-group">
+            <label for="deviceName">设备名称</label>
+            <input type="text" id="deviceName" placeholder="主控室大屏">
+            <div class="hint">显示在管理系统中的设备标识名称</div>
+          </div>
+          <div class="form-group">
+            <label for="heartbeatInterval">心跳间隔（秒）</label>
+            <input type="number" id="heartbeatInterval" min="10" max="120" value="30">
+          </div>
+        </div>
+      </div>
+
+      <!-- 其他 -->
+      <div class="section">
+        <div class="section-title">🔧 其他</div>
+        <div class="section-body">
+          <div class="checkbox-row"><input type="checkbox" id="enableCrashRecovery"><label for="enableCrashRecovery">页面崩溃自动恢复</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="enableAutoLaunch"><label for="enableAutoLaunch">开机自动启动</label></div>
+          <div class="config-path" id="configPath">配置文件路径: 加载中...</div>
+          <button type="button" style="margin-top:8px;padding:5px 12px;font-size:12px;border:1px solid #ccc;background:#fafafa;border-radius:4px;cursor:pointer" onclick="openFolder()">📁 打开配置文件夹</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-status" id="saveStatus"></div>
+
+    <div class="button-group">
+      <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+      <button class="btn btn-secondary" onclick="window.close()">关闭</button>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    function setField(id, value) {
+      document.getElementById(id).value = value;
+    }
+
+    function openFolder() {
+      ipcRenderer.send('open-config-folder');
+    }
+
+    // 加载当前配置
+    ipcRenderer.send('get-config');
+    ipcRenderer.send('get-config-path');
+
+    ipcRenderer.on('config-data', (event, cfg) => {
+      document.getElementById('url').value = cfg.url || '';
+      document.getElementById('reloadInterval').value = cfg.reloadInterval || 900000;
+      document.getElementById('enableAutoReload').checked = !!cfg.enableAutoReload;
+      document.getElementById('enableCrashRecovery').checked = cfg.enableCrashRecovery !== false;
+      document.getElementById('enableAutoLaunch').checked = !!cfg.enableAutoLaunch;
+      document.getElementById('fullscreen').checked = cfg.fullscreen !== false;
+      document.getElementById('alwaysOnTop').checked = cfg.alwaysOnTop !== false;
+      document.getElementById('zoomFactor').value = cfg.zoomFactor || 1.0;
+      document.getElementById('forceViewport').checked = cfg.forceViewport !== false;
+      document.getElementById('wsServerUrl').value = cfg.wsServerUrl || '';
+      document.getElementById('deviceName').value = cfg.deviceName || '';
+      document.getElementById('heartbeatInterval').value = cfg.heartbeatInterval || 30;
+    });
+
+    ipcRenderer.on('config-path', (event, p) => {
+      document.getElementById('configPath').textContent = '配置文件: ' + p;
+    });
+
+    ipcRenderer.on('config-saved', (event, result) => {
+      const el = document.getElementById('saveStatus');
+      el.style.display = 'block';
+      if (result && result.success) {
+        el.className = 'save-status success';
+        el.textContent = '✅ 配置已保存并立即应用';
+      } else {
+        el.className = 'save-status error';
+        el.textContent = '❌ 保存失败';
+      }
+      setTimeout(() => { el.style.display = 'none'; }, 3000);
+    });
+
+    function saveConfig() {
+      const urlVal = document.getElementById('url').value.trim();
+      if (!urlVal) { alert('请填写展示网址'); return; }
+
+      const newConfig = {
+        url: urlVal,
+        reloadInterval: parseInt(document.getElementById('reloadInterval').value) || 900000,
+        enableAutoReload: document.getElementById('enableAutoReload').checked,
+        enableCrashRecovery: document.getElementById('enableCrashRecovery').checked,
+        enableAutoLaunch: document.getElementById('enableAutoLaunch').checked,
+        fullscreen: document.getElementById('fullscreen').checked,
+        alwaysOnTop: document.getElementById('alwaysOnTop').checked,
+        zoomFactor: parseFloat(document.getElementById('zoomFactor').value) || 1.0,
+        forceViewport: document.getElementById('forceViewport').checked,
+        wsServerUrl: document.getElementById('wsServerUrl').value.trim(),
+        deviceName: document.getElementById('deviceName').value.trim(),
+        heartbeatInterval: parseInt(document.getElementById('heartbeatInterval').value) || 30
+      };
+
+      ipcRenderer.send('update-config', newConfig);
+    }
+  </script>
+</body>
+</html>

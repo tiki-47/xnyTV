@@ -1,0 +1,47 @@
+# Local editors and machine-specific settings
+.idea/
+.vscode/
+*.iml
+local.properties
+.local-backup/
+
+# Build outputs and caches
+.gradle/
+.kotlin/
+build/
+target/
+node_modules/
+dist/
+.cxx/
+.externalNativeBuild/
+captures/
+/tvservice/bin/
+/deploy/server_package/
+
+# Runtime logs and generated downloads
+logs/
+*.log
+*.apk
+*.aab
+*.exe
+*.msi
+/tvservice/src/main/resources/static/downloads/
+
+# Local environment and signing credentials
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+application-local.properties
+/xnykiosk/config.json
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+
+# OS metadata
+.DS_Store
+Thumbs.db

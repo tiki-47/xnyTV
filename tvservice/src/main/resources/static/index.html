@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV 集中管理系统</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+        .header { background: #1a1d27; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d3748; }
+        .header h1 { font-size: 20px; font-weight: 600; color: #63b3ed; }
+        .header .stats { display: flex; gap: 24px; }
+        .stat-item { text-align: center; }
+        .stat-item .num { font-size: 22px; font-weight: 700; }
+        .stat-item .label { font-size: 12px; color: #718096; }
+        .stat-online { color: #68d391; }
+        .stat-offline { color: #fc8181; }
+        .stat-total { color: #63b3ed; }
+
+        .main { padding: 24px; }
+
+        .toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .toolbar input, .toolbar select { background: #1a1d27; border: 1px solid #2d3748; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
+        .toolbar input { width: 260px; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; }
+        .btn-primary { background: #3182ce; color: white; }
+        .btn-primary:hover { background: #2b6cb0; }
+        .btn-success { background: #38a169; color: white; }
+        .btn-success:hover { background: #2f855a; }
+        .btn-warning { background: #d69e2e; color: white; }
+        .btn-warning:hover { background: #b7791f; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-purple { background: #805ad5; color: white; }
+        .btn-purple:hover { background: #6b46c1; }
+        .btn-teal { background: #2c7a7b; color: white; }
+        .btn-teal:hover { background: #285e61; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        .btn-outline { background: transparent; border: 1px solid #4a5568; color: #e2e8f0; }
+        .btn-outline:hover { background: #2d3748; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+
+        .device-card { background: #1a1d27; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; transition: 0.2s; }
+        .device-card:hover { border-color: #4a5568; }
+        .device-card.online { border-left: 3px solid #68d391; }
+        .device-card.offline { border-left: 3px solid #fc8181; }
+        .device-card.exception { border-left: 3px solid #f6e05e; }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .device-name { font-size: 15px; font-weight: 600; }
+        .device-id { font-size: 11px; color: #718096; margin-top: 2px; font-family: monospace; }
+        .badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .badge-online { background: #1c4532; color: #68d391; }
+        .badge-offline { background: #3b1515; color: #fc8181; }
+        .badge-exception { background: #3d3300; color: #f6e05e; }
+
+        .card-info { font-size: 12px; color: #a0aec0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-bottom: 10px; }
+        .card-info .row { display: contents; }
+        .card-info .lbl { color: #718096; }
+        .card-info .val { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .url-display { font-size: 12px; color: #63b3ed; background: #0d1117; padding: 5px 8px; border-radius: 4px; margin-bottom: 10px; word-break: break-all; max-height: 36px; overflow: hidden; }
+
+        .card-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+
+        .loading { text-align: center; padding: 60px; color: #718096; }
+        .empty { text-align: center; padding: 60px; color: #4a5568; font-size: 16px; }
+
+        /* 弹窗 */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-box { background: #1a1d27; border: 1px solid #2d3748; border-radius: 12px; padding: 24px; width: 520px; max-width: 96vw; max-height: 92vh; overflow-y: auto; }
+        .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 18px; color: #63b3ed; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; color: #a0aec0; margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; background: #0d1117; border: 1px solid #2d3748; color: #e2e8f0;
+            padding: 9px 12px; border-radius: 6px; font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #3182ce; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .form-hint { font-size: 11px; color: #4a5568; margin-top: 4px; }
+
+        /* 截图 */
+        #screenshotImg { max-width: 100%; border-radius: 6px; margin-top: 12px; display: none; }
+        .screenshot-status { font-size: 13px; color: #718096; margin-top: 8px; }
+
+        /* 日志面板 */
+        .log-panel { background: #1a1d27; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; margin-top: 24px; }
+        .log-panel h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #a0aec0; }
+        .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .log-table th { text-align: left; padding: 8px 12px; color: #718096; border-bottom: 1px solid #2d3748; font-weight: 500; }
+        .log-table td { padding: 8px 12px; border-bottom: 1px solid #1e2433; }
+        .log-table tr:hover td { background: #0d1117; }
+        .status-sent { color: #63b3ed; }
+        .status-success { color: #68d391; }
+        .status-fail { color: #fc8181; }
+        .status-pending { color: #718096; }
+
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #2d3748; color: #e2e8f0; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .toast.show { opacity: 1; }
+        .toast.success { border-left: 3px solid #68d391; }
+        .toast.error { border-left: 3px solid #fc8181; }
+
+        .tip { font-size: 12px; color: #4a5568; background: #0d1117; padding: 8px 10px; border-radius: 4px; margin-bottom: 14px; }
+
+        /* 分页 */
+        .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .pagination button { padding: 6px 12px; border-radius: 5px; border: 1px solid #2d3748; background: #1a1d27; color: #e2e8f0; cursor: pointer; font-size: 13px; }
+        .pagination button:hover { background: #2d3748; }
+        .pagination button.active { background: #3182ce; border-color: #3182ce; }
+        .pagination button:disabled { opacity: 0.35; cursor: not-allowed; }
+        .pagination .page-info { font-size: 13px; color: #718096; padding: 0 8px; }
+
+        /* PC设备标识 */
+        .badge-pc { background: #1a365d; color: #63b3ed; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>📺 TV 集中管理系统</h1>
+    <div class="stats">
+        <div class="stat-item"><div class="num stat-total" id="statTotal">-</div><div class="label">设备总数</div></div>
+        <div class="stat-item"><div class="num stat-online" id="statOnline">-</div><div class="label">在线</div></div>
+        <div class="stat-item"><div class="num stat-offline" id="statOffline">-</div><div class="label">离线</div></div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="搜索设备名称/位置/ID/IP..." oninput="filterDevices()">
+        <select id="statusFilter" onchange="filterDevices()">
+            <option value="">全部状态</option>
+            <option value="1">在线</option>
+            <option value="0">离线</option>
+        </select>
+        <button class="btn btn-primary" onclick="loadDevices()">🔄 刷新</button>
+        <button class="btn btn-success" onclick="openBatchModal()">📡 批量操作</button>
+        <button class="btn btn-outline" onclick="loadCommandLog()">📋 指令记录</button>
+        <span style="color:#718096;font-size:12px;margin-left:auto">自动刷新: <span id="countdown">10</span>s</span>
+    </div>
+
+    <div id="deviceGrid" class="device-grid">
+        <div class="loading">加载中...</div>
+    </div>
+    <div class="pagination" id="paginationBar"></div>
+
+    <div class="log-panel" id="logPanel" style="display:none">
+        <h3>最近指令记录 <button class="btn btn-sm btn-outline" style="float:right" onclick="document.getElementById('logPanel').style.display='none'">关闭</button></h3>
+        <table class="log-table">
+            <thead><tr><th>时间</th><th>设备</th><th>指令类型</th><th>状态</th><th>结果</th></tr></thead>
+            <tbody id="logTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 设备配置弹窗（含展示URL）-->
+<div class="modal" id="configModal">
+    <div class="modal-box">
+        <div class="modal-title">⚙️ 设备配置 — <span id="configDeviceName"></span></div>
+        <div class="tip">修改配置后会实时下发到在线设备。设备下次上线时也会自动同步。</div>
+
+        <div class="form-group">
+            <label>展示网址（URL）</label>
+            <input type="text" id="cfgUrl" placeholder="http://...">
+            <div class="form-hint">留空则不修改设备当前展示的网址</div>
+        </div>
+        <div class="form-group">
+            <label>定时刷新间隔（秒，0 = 不刷新）</label>
+            <input type="number" id="cfgRefresh" min="0">
+        </div>
+        <div class="form-group">
+            <label>定时重建 WebView 间隔（秒）</label>
+            <input type="number" id="cfgRebuild" min="0">
+            <div class="form-hint">定期重建 WebView 可释放内存、防止长时间运行后页面卡死，建议 3600（1小时）</div>
+        </div>
+        <div class="form-group">
+            <label>心跳间隔（秒）</label>
+            <input type="number" id="cfgHeartbeat" min="10">
+        </div>
+        <div class="form-group">
+            <label>Kiosk 模式（锁定设备，屏蔽返回/主屏键）</label>
+            <select id="cfgKiosk">
+                <option value="1">启用</option>
+                <option value="0">禁用</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('configModal')">取消</button>
+            <button class="btn btn-primary" onclick="saveConfig()">保存并推送</button>
+        </div>
+    </div>
+</div>
+
+<!-- 批量操作弹窗 -->
+<div class="modal" id="batchModal">
+    <div class="modal-box">
+        <div class="modal-title">📡 批量操作</div>
+        <div class="form-group">
+            <label>操作类型</label>
+            <select id="batchCommandType" onchange="onBatchTypeChange()">
+                <option value="REFRESH">刷新页面</option>
+                <option value="REBUILD_WEBVIEW">重建 WebView（释放内存）</option>
+                <option value="RESTART_APP">重启应用</option>
+                <option value="CHANGE_URL">修改展示 URL</option>
+            </select>
+        </div>
+        <div class="form-group" id="batchUrlGroup" style="display:none">
+            <label>新的 URL</label>
+            <input type="text" id="batchUrl" placeholder="http://...">
+        </div>
+        <div class="form-group">
+            <label>目标设备</label>
+            <select id="batchTarget">
+                <option value="all">全部在线设备</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('batchModal')">取消</button>
+            <button class="btn btn-primary" onclick="sendBatchCommand()">下发指令</button>
+        </div>
+    </div>
+</div>
+
+<!-- 截图弹窗 -->
+<div class="modal" id="screenshotModal">
+    <div class="modal-box" style="width:680px">
+        <div class="modal-title">📷 设备截图 — <span id="screenshotDeviceName"></span></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+            <button class="btn btn-primary btn-sm" onclick="doRequestScreenshot()">📸 获取截图</button>
+            <span class="screenshot-status" id="screenshotStatus">点击按钮向设备发送截图请求</span>
+        </div>
+        <img id="screenshotImg" src="" alt="设备截图">
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('screenshotModal')">关闭</button>
+            <button class="btn btn-success" id="btnSaveScreenshot" style="display:none" onclick="saveScreenshot()">💾 保存图片</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allDevices = [];
+let filteredDevices = [];
+let currentConfigDeviceId = '';
+let currentScreenshotDeviceId = '';
+let screenshotPollTimer = null;
+let countdown = 10;
+let autoRefreshTimer;
+
+// 分页
+const PAGE_SIZE = 12;
+let currentPage = 1;
+
+const CMD_LABELS = {
+    CHANGE_URL: '修改URL', REFRESH: '刷新页面',
+    REBUILD_WEBVIEW: '重建WebView', UPDATE_CONFIG: '更新配置',
+    RESTART_APP: '重启应用', SCREENSHOT_REQ: '请求截图'
+};
+const STATUS_LABELS = { 0: '待执行', 1: '已发送', 2: '成功', 3: '失败', 4: '超时' };
+const STATUS_CLASSES = { 0: 'status-pending', 1: 'status-sent', 2: 'status-success', 3: 'status-fail', 4: 'status-fail' };
+
+async function api(method, url, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json', 'X-Operator': 'admin' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    return res.json();
+}
+
+async function loadDevices() {
+    const res = await api('GET', '/api/device/list');
+    if (res.code === 200) {
+        allDevices = res.data || [];
+        filteredDevices = allDevices;
+        updateStats();
+        filterDevices();
+    }
+}
+
+function updateStats() {
+    document.getElementById('statTotal').textContent = allDevices.length;
+    document.getElementById('statOnline').textContent = allDevices.filter(d => d.status === 1).length;
+    document.getElementById('statOffline').textContent = allDevices.filter(d => d.status !== 1).length;
+}
+
+function filterDevices() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    filteredDevices = allDevices.filter(d => {
+        const matchSearch = !search ||
+            (d.deviceName || '').toLowerCase().includes(search) ||
+            (d.location || '').toLowerCase().includes(search) ||
+            (d.deviceId || '').toLowerCase().includes(search) ||
+            (d.ipAddress || '').toLowerCase().includes(search);
+        const matchStatus = !status || String(d.status) === status;
+        return matchSearch && matchStatus;
+    });
+    currentPage = 1;
+    renderDevicesPage();
+}
+
+function renderDevicesPage() {
+    const totalPages = Math.max(1, Math.ceil(filteredDevices.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageDevices = filteredDevices.slice(start, start + PAGE_SIZE);
+    renderDevices(pageDevices, filteredDevices.length, totalPages);
+}
+
+function renderDevices(devices, total, totalPages) {
+    const grid = document.getElementById('deviceGrid');
+    if (!total || !devices.length) {
+        grid.innerHTML = '<div class="empty">暂无设备数据</div>';
+        document.getElementById('paginationBar').innerHTML = '';
+        return;
+    }
+
+    grid.innerHTML = devices.map(d => {
+        const statusClass = d.status === 1 ? 'online' : d.status === 2 ? 'exception' : 'offline';
+        const badgeClass = d.status === 1 ? 'badge-online' : d.status === 2 ? 'badge-exception' : 'badge-offline';
+        const statusText = d.status === 1 ? '在线' : d.status === 2 ? '异常' : '离线';
+        const isOnline = d.status === 1;
+        const heartbeat = d.offlineSeconds != null
+            ? (d.offlineSeconds < 60 ? '刚刚' : `${Math.floor(d.offlineSeconds / 60)}分钟前`)
+            : '从未';
+
+        const isPC = (d.deviceModel || '').toLowerCase().includes('windows') || (d.deviceModel || '').toLowerCase().includes('pc');
+        const deviceTypeBadge = isPC
+            ? `<span class="badge badge-pc" style="font-size:10px;margin-left:6px">PC</span>`
+            : `<span style="font-size:10px;color:#718096;margin-left:6px">TV</span>`;
+        const osSysLabel = isPC ? 'OS版本' : 'Android';
+        return `
+        <div class="device-card ${statusClass}">
+            <div class="card-header">
+                <div style="flex:1;min-width:0">
+                    <div class="device-name" style="display:flex;align-items:center">${d.deviceName || '未命名设备'}${deviceTypeBadge}</div>
+                    <div class="device-id">📍 ${d.location || '未设置位置'}</div>
+                    <div class="device-id" style="margin-top:2px">${d.deviceId}</div>
+                </div>
+                <span class="badge ${badgeClass}">${statusText}</span>
+            </div>
+            <div class="card-info">
+                <span class="lbl">IP地址</span><span class="val">${d.ipAddress || '-'}</span>
+                <span class="lbl">心跳时间</span><span class="val">${heartbeat}</span>
+                <span class="lbl">型号</span><span class="val">${d.deviceModel || '-'}</span>
+                <span class="lbl">${osSysLabel}</span><span class="val">${d.androidVersion || '-'}</span>
+                <span class="lbl">APP版本</span><span class="val">${d.appVersion || '-'}</span>
+                <span class="lbl">注册时间</span><span class="val">${d.registerTime ? d.registerTime.substring(0, 16) : '-'}</span>
+            </div>
+            ${d.displayUrl ? `<div class="url-display">🌐 ${d.displayUrl}</div>` : ''}
+            <div class="card-actions">
+                <button class="btn btn-sm btn-success" onclick="sendCmd('${d.deviceId}','REFRESH')" ${isOnline ? '' : 'disabled'}>刷新页面</button>
+                <button class="btn btn-sm btn-warning" onclick="sendCmd('${d.deviceId}','REBUILD_WEBVIEW')" ${isOnline ? '' : 'disabled'} title="${isPC ? '重新加载页面（PC端）' : '释放内存，重建 WebView（TV端）'}">重载</button>
+                <button class="btn btn-sm btn-outline" onclick="openConfig('${d.deviceId}','${(d.deviceName||'').replace(/'/g,"\\'")}')">⚙️ 配置</button>
+                <button class="btn btn-sm btn-purple" onclick="openScreenshot('${d.deviceId}','${(d.deviceName||d.deviceId).replace(/'/g,"\\'")}')">📷 截图</button>
+            </div>
+        </div>`;
+    }).join('');
+
+    // 渲染分页条
+    const bar = document.getElementById('paginationBar');
+    if (totalPages <= 1) { bar.innerHTML = `<span class="page-info">共 ${total} 台设备</span>`; return; }
+    let btns = `<button onclick="gotoPage(1)" ${currentPage===1?'disabled':''}>«</button>`;
+    btns += `<button onclick="gotoPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>‹</button>`;
+    const start2 = Math.max(1, currentPage - 2), end2 = Math.min(totalPages, currentPage + 2);
+    for (let i = start2; i <= end2; i++) {
+        btns += `<button onclick="gotoPage(${i})" class="${i===currentPage?'active':''}">${i}</button>`;
+    }
+    btns += `<button onclick="gotoPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>›</button>`;
+    btns += `<button onclick="gotoPage(${totalPages})" ${currentPage===totalPages?'disabled':''}>»</button>`;
+    btns += `<span class="page-info">第 ${currentPage}/${totalPages} 页，共 ${total} 台</span>`;
+    bar.innerHTML = btns;
+}
+
+function gotoPage(p) {
+    currentPage = p;
+    renderDevicesPage();
+}
+
+async function sendCmd(deviceId, type, url = null) {
+    const body = { deviceIds: [deviceId], commandType: type, operator: 'admin' };
+    if (url) body.url = url;
+    const res = await api('POST', '/api/command/send', body);
+    showToast(res.code === 200 ? `指令「${CMD_LABELS[type]}」已下发` : res.message, res.code === 200 ? 'success' : 'error');
+}
+
+// ===================== 配置弹窗（包含 URL）=====================
+async function openConfig(deviceId, deviceName) {
+    currentConfigDeviceId = deviceId;
+    document.getElementById('configDeviceName').textContent = deviceName || deviceId;
+    const res = await api('GET', `/api/device/${deviceId}/config`);
+    const cfg = res.data || {};
+    document.getElementById('cfgUrl').value = cfg.displayUrl || '';
+    document.getElementById('cfgRefresh').value = cfg.refreshInterval ?? 0;
+    document.getElementById('cfgRebuild').value = cfg.rebuildInterval ?? 3600;
+    document.getElementById('cfgHeartbeat').value = cfg.heartbeatInterval ?? 30;
+    document.getElementById('cfgKiosk').value = cfg.enableKioskMode ?? 1;
+    document.getElementById('configModal').classList.add('show');
+}
+
+async function saveConfig() {
+    const newUrl = document.getElementById('cfgUrl').value.trim();
+    const body = {
+        deviceId: currentConfigDeviceId,
+        displayUrl: newUrl,
+        refreshInterval: parseInt(document.getElementById('cfgRefresh').value) || 0,
+        rebuildInterval: parseInt(document.getElementById('cfgRebuild').value) || 3600,
+        heartbeatInterval: parseInt(document.getElementById('cfgHeartbeat').value) || 30,
+        enableKioskMode: parseInt(document.getElementById('cfgKiosk').value),
+        wsServerUrl: `ws://${location.host}/ws`
+    };
+    const res = await api('PUT', `/api/device/${currentConfigDeviceId}/config`, body);
+    if (res.code !== 200) { showToast(res.message, 'error'); return; }
+    showToast('配置保存成功', 'success');
+    closeModal('configModal');
+
+    // 如果设备在线，推送 UPDATE_CONFIG 指令
+    const dev = allDevices.find(d => d.deviceId === currentConfigDeviceId);
+    if (dev && dev.status === 1) {
+        await api('POST', '/api/command/send', {
+            deviceIds: [currentConfigDeviceId],
+            commandType: 'UPDATE_CONFIG',
+            operator: 'admin',
+            config: body
+        });
+        // 如果 URL 有变化，同时下发 CHANGE_URL
+        if (newUrl && newUrl !== dev.displayUrl) {
+            await api('POST', '/api/command/send', {
+                deviceIds: [currentConfigDeviceId],
+                commandType: 'CHANGE_URL',
+                operator: 'admin',
+                url: newUrl
+            });
+        }
+        showToast('配置已推送至设备', 'success');
+    }
+    loadDevices();
+}
+
+// ===================== 批量操作 =====================
+function openBatchModal() {
+    document.getElementById('batchModal').classList.add('show');
+}
+
+function onBatchTypeChange() {
+    const type = document.getElementById('batchCommandType').value;
+    document.getElementById('batchUrlGroup').style.display = type === 'CHANGE_URL' ? 'block' : 'none';
+}
+
+async function sendBatchCommand() {
+    const type = document.getElementById('batchCommandType').value;
+    const deviceIds = allDevices.filter(d => d.status === 1).map(d => d.deviceId);
+    if (!deviceIds.length) { showToast('没有在线设备', 'error'); return; }
+
+    const body = { deviceIds, commandType: type, operator: 'admin' };
+    if (type === 'CHANGE_URL') {
+        body.url = document.getElementById('batchUrl').value.trim();
+        if (!body.url) { showToast('请输入URL', 'error'); return; }
+    }
+
+    const res = await api('POST', '/api/command/send', body);
+    showToast(res.code === 200 ? `批量指令已下发，共 ${deviceIds.length} 台` : res.message,
+        res.code === 200 ? 'success' : 'error');
+    closeModal('batchModal');
+}
+
+// ===================== 截图功能 =====================
+function openScreenshot(deviceId, deviceName) {
+    currentScreenshotDeviceId = deviceId;
+    document.getElementById('screenshotDeviceName').textContent = deviceName;
+    document.getElementById('screenshotImg').style.display = 'none';
+    document.getElementById('screenshotImg').src = '';
+    document.getElementById('screenshotStatus').textContent = '点击「获取截图」向设备发送请求';
+    document.getElementById('btnSaveScreenshot').style.display = 'none';
+    clearInterval(screenshotPollTimer);
+    document.getElementById('screenshotModal').classList.add('show');
+}
+
+async function doRequestScreenshot() {
+    const deviceId = currentScreenshotDeviceId;
+    document.getElementById('screenshotStatus').textContent = '⏳ 正在请求截图，等待设备响应...';
+    document.getElementById('screenshotImg').style.display = 'none';
+    document.getElementById('btnSaveScreenshot').style.display = 'none';
+
+    const res = await api('POST', `/api/monitor/${deviceId}/screenshot/request`);
+    if (res.code !== 200) {
+        document.getElementById('screenshotStatus').textContent = '❌ 请求失败：' + res.message;
+        return;
+    }
+
+    // 轮询等待截图
+    let attempts = 0;
+    clearInterval(screenshotPollTimer);
+    screenshotPollTimer = setInterval(async () => {
+        attempts++;
+        if (attempts > 20) {
+            clearInterval(screenshotPollTimer);
+            document.getElementById('screenshotStatus').textContent = '⚠️ 超时，设备未响应（确认设备在线）';
+            return;
+        }
+        const r = await api('GET', `/api/monitor/${deviceId}/screenshot`);
+        if (r.code === 200 && r.data && r.data.imageBase64) {
+            clearInterval(screenshotPollTimer);
+            const img = document.getElementById('screenshotImg');
+            img.src = 'data:image/jpeg;base64,' + r.data.imageBase64;
+            img.style.display = 'block';
+            document.getElementById('screenshotStatus').textContent = '✅ 截图获取成功';
+            document.getElementById('btnSaveScreenshot').style.display = '';
+        }
+    }, 1000);
+}
+
+function saveScreenshot() {
+    const img = document.getElementById('screenshotImg');
+    if (!img.src) return;
+    const a = document.createElement('a');
+    a.href = img.src;
+    a.download = `screenshot_${currentScreenshotDeviceId}_${Date.now()}.jpg`;
+    a.click();
+}
+
+// ===================== 指令日志 =====================
+async function loadCommandLog() {
+    const res = await api('GET', '/api/command/recent?limit=30');
+    if (res.code !== 200) return;
+    const tbody = document.getElementById('logTableBody');
+    tbody.innerHTML = (res.data || []).map(c => `
+        <tr>
+            <td>${c.createTime || ''}</td>
+            <td>${c.deviceId}</td>
+            <td>${CMD_LABELS[c.commandType] || c.commandType}</td>
+            <td class="${STATUS_CLASSES[c.status]}">${STATUS_LABELS[c.status] || c.status}</td>
+            <td>${c.resultMessage || '-'}</td>
+        </tr>`).join('');
+    document.getElementById('logPanel').style.display = 'block';
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    if (id === 'screenshotModal') clearInterval(screenshotPollTimer);
+}
+
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast show ${type}`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// 自动刷新倒计时
+function startAutoRefresh() {
+    clearInterval(autoRefreshTimer);
+    countdown = 10;
+    autoRefreshTimer = setInterval(() => {
+        countdown--;
+        document.getElementById('countdown').textContent = countdown;
+        if (countdown <= 0) { loadDevices(); countdown = 10; }
+    }, 1000);
+}
+
+document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+
+loadDevices();
+startAutoRefresh();
+</script>
+</body>
+</html>

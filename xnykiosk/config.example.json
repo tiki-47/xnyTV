@@ -1,0 +1,14 @@
+{
+  "url": "https://example.com",
+  "reloadInterval": 900000,
+  "enableAutoReload": true,
+  "enableCrashRecovery": true,
+  "enableAutoLaunch": true,
+  "fullscreen": true,
+  "alwaysOnTop": true,
+  "zoomFactor": 1.0,
+  "forceViewport": true,
+  "wsServerUrl": "",
+  "deviceName": "",
+  "heartbeatInterval": 30
+}

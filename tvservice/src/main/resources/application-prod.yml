@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: tvservice
+  datasource:
+    #  MySQL 和服务在同一台机器，保持 localhost
+    url: jdbc:mysql://localhost:3306/tv_management?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    # MySQL 密码
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: cn.xny.tvservice.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    # 生产环境关闭 SQL 日志，提升性能
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+logging:
+  level:
+    cn.xny.tvservice: info
+    root: warn
+  file:
+    name: logs/tvservice.log
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 7
+
+tv:
+  websocket:
+    path: /ws
+    heartbeat-timeout: 60000
+    heartbeat-check-interval: 30000
